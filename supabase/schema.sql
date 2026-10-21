@@ -407,7 +407,7 @@ insert into public.words (text, emoji) values
  ('nhấc chân','🦵'),('cóc','🐸'),('tóc','💇'),('gốc cây','🪵'),('lốc xoáy','🌪️'),('chúc mừng','🎉'),('cục tẩy','🧽'),
  ('lục lạc','🔔'),('thức dậy','⏰'),('bức tranh','🖼️'),('rực rỡ','🌈'),('hát','🎤'),('cát','🏖️'),('mặt trời','☀️'),
  ('sắt','🔩'),('cắt tóc','💇'),('đất','🌍'),('lật đật','🪆'),('rót','🫗'),('giọt nước','💧'),('cà rốt','🥕'),('một','1️⃣'),
- ('nốt nhạc','🎵'),('vợt','🏸'),('thớt','🔪'),('mũ phớt','🎩'),('nút','🔘'),('phút','⏱️'),('sút bóng','⚽'),
+ ('nốt nhạc','🎵'),('vợt','🏸'),('thớt','🪵'),('mũ phớt','🎩'),('nút','🔘'),('phút','⏱️'),('sút bóng','⚽'),
  ('mứt dừa','🥥'),('vứt rác','🗑️'),('đứt dây','🧵'),('nứt nẻ','🏜️'),('ngan','🦆'),('bàn chải','🪥'),('nam châm','🧲'),
  ('khám bệnh','🩺'),('đám mây','☁️'),('leo trèo','🧗')
 on conflict (text) do nothing;
@@ -535,7 +535,9 @@ where u.kind in ('am','van') and not exists (select 1 from public.exercises e wh
 -- update public.profiles set role = 'teacher' where username = 'cogiao';
 
 -- ============ Rà soát vần: "bật lửa" không hợp với trẻ nhỏ → "gật đầu"; vần ut thiếu "bút chì" ============
-insert into public.words (text, emoji) values ('bút chì','✏️'),('gật đầu','🙆') on conflict (text) do nothing;
+insert into public.words (text, emoji) values ('bút chì','✏️'),('gật đầu','🙆'),
+  ('ba','👨'),('ca','☕'),('má','👩'),('bá','🧓'),('mà','🌾'),('mả','🪦'),('bả','👵'),('mã','🐎'),('bã','🥥'),('dữ','🦁'),('mạ','🌱'),('bạ','📒'),('lạ','❓')
+  on conflict (text) do nothing;
 delete from public.unit_words uw using public.units u, public.words w
 where uw.unit_id = u.id and uw.word_id = w.id and u.kind = 'van' and u.value = 'ât' and w.text = 'bật lửa';
 insert into public.unit_words (unit_id, word_id)

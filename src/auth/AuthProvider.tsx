@@ -36,12 +36,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(async ({ data }: { data: { session: Session | null } }) => {
       setSession(data.session)
       await loadProfile(data.session)
       setLoading(false)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_e: unknown, s: Session | null) => {
       setSession(s)
       // tránh gọi supabase trực tiếp trong callback (deadlock của supabase-js)
       setTimeout(() => loadProfile(s), 0)

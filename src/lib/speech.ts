@@ -27,17 +27,81 @@ export interface SpeakOptions {
   onEnd?: () => void
 }
 
+/**
+ * Các phụ âm đơn và phụ âm ghép đứng riêng lẻ:
+ * Nếu đưa nguyên chữ cái ("b", "c", "tr", "ch"...) cho TTS thì TTS sẽ đọc tên chữ cái ("bê", "xê")
+ * hoặc đánh vần tiếng Anh ("ti a"). Vì vậy chuyển sang cách phát âm âm vị tiếng Việt chuẩn tiểu học ("bờ", "cờ", "trờ"...).
+ */
+const PHONETIC_MAP: Record<string, string> = {
+  // Phụ âm đơn
+  b: 'bờ',
+  c: 'cờ',
+  d: 'dờ',
+  đ: 'đờ',
+  g: 'gờ',
+  h: 'hờ',
+  k: 'ca',
+  l: 'lờ',
+  m: 'mờ',
+  n: 'nờ',
+  p: 'pờ',
+  q: 'quờ',
+  r: 'rờ',
+  s: 'sờ',
+  t: 'tờ',
+  v: 'vờ',
+  x: 'xờ',
+  // Phụ âm ghép
+  ch: 'chờ',
+  gh: 'gờ',
+  gi: 'di',
+  kh: 'khờ',
+  ng: 'ngờ',
+  ngh: 'ngờ',
+  nh: 'nhờ',
+  ph: 'phờ',
+  qu: 'quờ',
+  th: 'thờ',
+  tr: 'trờ',
+  // Một số vần khi đứng riêng lẻ bị TTS đọc tách chữ cái (vd: "ac" -> "a xê")
+  ac: 'ác',
+  ăc: 'ắc',
+  âc: 'ấc',
+  oc: 'óc',
+  ôc: 'ốc',
+  uc: 'úc',
+  ưc: 'ức',
+  at: 'át',
+  ăt: 'ắt',
+  ât: 'ất',
+  ot: 'ót',
+  ôt: 'ốt',
+  ơt: 'ớt',
+  ut: 'út',
+  ưt: 'ứt',
+}
+
+export function normalizeForSpeech(raw: string): string {
+  const trimmed = raw.trim()
+  const lower = trimmed.toLowerCase().normalize('NFC')
+  if (PHONETIC_MAP[lower]) return PHONETIC_MAP[lower]
+  // vần đứng riêng tận cùng c/t/p/ch (ăc, ôt…) không thanh thì máy đọc sai → đọc kèm thanh sắc
+  if (/^[^\s\u0300\u0301\u0303\u0309\u0323]+(c|t|p|ch)$/i.test(lower.normalize('NFD'))) {
+    return applyTone(lower, '´')
+  }
+  return trimmed
+}
+
 let session = 0
 let audio: HTMLAudioElement | null = null
 
 export function speak(text: string, opts: SpeakOptions = {}) {
   stopSpeaking()
   const id = ++session
-  // vần đứng riêng tận cùng c/t/p/ch (ăc, ôt…) không thanh thì máy đọc sai → đọc kèm thanh sắc
-  if (/^[^\s\u0300\u0301\u0303\u0309\u0323]+(c|t|p|ch)$/i.test(text.normalize('NFD'))) text = applyTone(text, '´')
+  const spokenText = normalizeForSpeech(text)
   // giọng online (Google) đọc rõ thanh hỏi/ngã hơn giọng cài sẵn của Windows → ưu tiên khi có mạng
-  if (!navigator.onLine && hasVietnameseVoice()) speakNative(text, opts, id)
-  else speakOnline(text, opts, id)
+  if (!navigator.onLine && hasVietnameseVoice()) speakNative(spokenText, opts, id)
+  else speakOnline(spokenText, opts, id)
 }
 
 export function stopSpeaking() {
@@ -49,15 +113,17 @@ export function stopSpeaking() {
 // Đọc từng khúc ngắn: Chrome tự ngắt utterance dài ~15s; bỏ qua callback của lượt đọc đã bị dừng
 function speakNative(text: string, opts: SpeakOptions, id: number) {
   if (!('speechSynthesis' in window)) { opts.onEnd?.(); return }
-  const chunks = chunkText(text)
   const v = viVoice ?? pickVoice()
+  // Không dùng giọng tiếng Anh của trình duyệt để đọc tiếng Việt (tránh đọc sai kiểu tiếng Anh)
+  if (!v) { opts.onEnd?.(); return }
+  const chunks = chunkText(text)
   const playAt = (k: number) => {
     if (id !== session) return
     if (k >= chunks.length) { opts.onEnd?.(); return }
     const c = chunks[k]
     const u = new SpeechSynthesisUtterance(c.text)
     u.lang = 'vi-VN'
-    if (v) u.voice = v
+    u.voice = v
     u.rate = opts.rate ?? 0.8
     if (opts.onBoundary) u.onboundary = (e) => id === session && opts.onBoundary!(c.start + e.charIndex)
     u.onend = () => playAt(k + 1)
@@ -112,7 +178,7 @@ function speakOnline(text: string, opts: SpeakOptions, id: number) {
     }
     a.onended = () => playAt(k + 1)
     a.onerror = () => {
-      // mất mạng / API lỗi → thử giọng mặc định của máy
+      // mất mạng / API lỗi → thử giọng vi-VN của máy (nếu có)
       if (id !== session) return
       audio = null
       speakNative(chunks.slice(k).map((x) => x.text).join(' '), { ...opts, onBoundary: undefined }, id)

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { fetchUnits, unitLabel, useAsync } from '../lib/api'
 import { AM_SUBTYPE_LABELS, UNIT_KIND_LABELS, type UnitKind } from '../lib/types'
 import { Loading } from '../components/ui'
@@ -14,10 +14,26 @@ const labelSize = (t: string) => {
 }
 
 const SUBTYPE_EMOJI: Record<string, string> = { chinh: '🐚', phu: '🦀', ghep: '🐙' }
+const AM_SUB_STORAGE_KEY = 'vui_hoc_am_sub'
 
 export function UnitsPage({ kind }: { kind: UnitKind }) {
   const { data, loading, error } = useAsync(() => fetchUnits(kind), [kind])
-  const [sub, setSub] = useState<string>('chinh')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [sub, setSubState] = useState<string>(() => {
+    const fromUrl = searchParams.get('sub')
+    if (fromUrl && fromUrl in AM_SUBTYPE_LABELS) return fromUrl
+    try {
+      const saved = sessionStorage.getItem(AM_SUB_STORAGE_KEY)
+      if (saved && saved in AM_SUBTYPE_LABELS) return saved
+    } catch { /* ignore */ }
+    return 'chinh'
+  })
+
+  const setSub = (k: string) => {
+    setSubState(k)
+    try { sessionStorage.setItem(AM_SUB_STORAGE_KEY, k) } catch { /* ignore */ }
+    setSearchParams({ sub: k }, { replace: true })
+  }
   if (loading) return <Loading />
   if (error) return <p className="text-coral">Lỗi: {error}</p>
   const units = (data ?? []).filter((u) => kind !== 'am' || u.subtype === sub)

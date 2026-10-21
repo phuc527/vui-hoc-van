@@ -8,7 +8,12 @@ import { HighlightedText, type ExerciseProps } from './common'
 export function ReadCard({ config, unit, unitWords, allWords, onFinish }: ExerciseProps<ReadConfig>) {
   const main = unit?.kind === 'thanh' ? null : unit?.value
   const examples = (config.examples ?? []).map((t) => allWords.find((w) => w.text === t) ?? { id: -1, text: t, emoji: null, image_url: null })
-  const items = [...examples, ...unitWords]
+  const seen = new Set<string>()
+  const items = [...examples, ...unitWords].filter((w) => {
+    if (seen.has(w.text)) return false
+    seen.add(w.text)
+    return true
+  })
   const [heard, setHeard] = useState<Set<string>>(new Set())
   const rhymes = unit?.kind === 'van' ? [unit.value] : []
 

@@ -101,7 +101,7 @@ function NamePicker() {
 
   useEffect(() => {
     supabase.from('profiles').select('display_name, username').eq('role', 'student').order('display_name')
-      .then(({ data }) => {
+      .then(({ data }: { data: { display_name?: string | null; username: string }[] | null }) => {
         const names = (data ?? []).map((p) => p.display_name || p.username)
         setText((t) => t || names.join('\n'))
       })

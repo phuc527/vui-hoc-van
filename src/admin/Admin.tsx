@@ -137,7 +137,7 @@ function WordsAdmin() {
   const { data, loading, reload } = useAsync(async () => {
     const [words, units, links] = await Promise.all([
       fetchWords(), fetchUnits(undefined, true),
-      supabase.from('unit_words').select('*').then((r) => (r.data ?? []) as { unit_id: number; word_id: number }[]),
+      (supabase.from('unit_words').select('*') as Promise<{ data?: { unit_id: number; word_id: number }[] }>).then((r) => r.data ?? []),
     ])
     return { words, units, links }
   }, [])

@@ -337,5 +337,21 @@ export function BouncyTitle({ text, className = '' }: { text: string; className?
 export function WordImage({ emoji, imageUrl, text, className = 'h-24 w-24 text-6xl' }:
   { emoji?: string | null; imageUrl?: string | null; text: string; className?: string }) {
   if (imageUrl) return <img src={imageUrl} alt={text} className={`${className} rounded-2xl object-cover`} />
+  if (text.trim().toLowerCase() === 'thớt' || text.trim().toLowerCase() === 'cái thớt') {
+    return (
+      <span className={`${className} inline-flex items-center justify-center rounded-2xl bg-foam p-2.5`} role="img" aria-label={text}>
+        <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-sm" aria-hidden>
+          {/* Cạnh dày 3D của thớt gỗ */}
+          <rect x="14" y="12" width="72" height="80" rx="14" fill="#A66A38" />
+          {/* Mặt thớt gỗ sáng */}
+          <rect x="14" y="8" width="72" height="78" rx="14" fill="#DFA066" stroke="#8C5326" strokeWidth="3" />
+          {/* Lỗ treo thớt trên đầu */}
+          <rect x="38" y="15" width="24" height="9" rx="4.5" fill="#E8F7FA" stroke="#8C5326" strokeWidth="2.5" />
+          {/* Vân gỗ tự nhiên */}
+          <path d="M26 36H74M24 52H68M30 68H72" stroke="#C5834B" strokeWidth="3" strokeLinecap="round" opacity=".65" />
+        </svg>
+      </span>
+    )
+  }
   return <span className={`${className} inline-flex items-center justify-center rounded-2xl bg-foam`} role="img" aria-label={text}>{emoji ?? '🖼️'}</span>
 }

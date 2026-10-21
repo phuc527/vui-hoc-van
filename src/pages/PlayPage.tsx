@@ -54,7 +54,7 @@ export function UnitPage() {
   return (
     <>
       <div className="mb-2 flex items-center justify-between">
-        <Link to={`/${unit.kind}`} className="font-bold text-ocean-deep">← {UNIT_KIND_LABELS[unit.kind]}</Link>
+        <Link to={unit.kind === 'am' && unit.subtype ? `/am?sub=${unit.subtype}` : `/${unit.kind}`} className="font-bold text-ocean-deep">← {UNIT_KIND_LABELS[unit.kind]}</Link>
         {data.unitWords.length > 0 && (
           <button onClick={() => setCards(true)} className="rounded-xl bg-white/85 px-4 py-2 font-bold text-ocean-deep shadow hover:bg-white">📽️ Trình chiếu thẻ từ</button>
         )}
