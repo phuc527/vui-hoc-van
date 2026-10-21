@@ -105,4 +105,45 @@ export function strokeStart(d: string): [number, number] {
   return m ? [Number(m[1]), Number(m[2])] : [0, 0]
 }
 
+/** Lấy danh sách các điểm mẫu dọc theo path SVG (chỉ gồm M, L, C tuyệt đối) */
+export function samplePathPoints(d: string, step = 4): { x: number; y: number }[] {
+  const tokens = d.match(/[MLC]|-?\d*\.?\d+/g) ?? []
+  const pts: { x: number; y: number }[] = []
+  let cx = 0, cy = 0, i = 0
+  const pushSeg = (x0: number, y0: number, x1: number, y1: number) => {
+    const dist = Math.hypot(x1 - x0, y1 - y0)
+    const n = Math.max(1, Math.ceil(dist / step))
+    for (let k = 1; k <= n; k++) {
+      pts.push({ x: x0 + ((x1 - x0) * k) / n, y: y0 + ((y1 - y0) * k) / n })
+    }
+  }
+  while (i < tokens.length) {
+    const cmd = tokens[i++]
+    if (cmd === 'M') {
+      cx = Number(tokens[i++]); cy = Number(tokens[i++])
+      pts.push({ x: cx, y: cy })
+    } else if (cmd === 'L') {
+      const nx = Number(tokens[i++]), ny = Number(tokens[i++])
+      pushSeg(cx, cy, nx, ny)
+      cx = nx; cy = ny
+    } else if (cmd === 'C') {
+      const x1 = Number(tokens[i++]), y1 = Number(tokens[i++])
+      const x2 = Number(tokens[i++]), y2 = Number(tokens[i++])
+      const x3 = Number(tokens[i++]), y3 = Number(tokens[i++])
+      const approxLen = Math.hypot(x1 - cx, y1 - cy) + Math.hypot(x2 - x1, y2 - y1) + Math.hypot(x3 - x2, y3 - y2)
+      const n = Math.max(4, Math.ceil(approxLen / step))
+      let px = cx, py = cy
+      for (let k = 1; k <= n; k++) {
+        const t = k / n, u = 1 - t
+        const nx = u * u * u * cx + 3 * u * u * t * x1 + 3 * u * t * t * x2 + t * t * t * x3
+        const ny = u * u * u * cy + 3 * u * u * t * y1 + 3 * u * t * t * y2 + t * t * t * y3
+        pts.push({ x: nx, y: ny })
+        px = nx; py = ny
+      }
+      cx = px; cy = py
+    }
+  }
+  return pts
+}
+
 const round = (n: number) => Math.round(n * 100) / 100

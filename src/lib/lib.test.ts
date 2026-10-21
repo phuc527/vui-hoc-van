@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyTone, composeSyllable, findRhyme, stripTone } from './vietnamese'
-import { percent, starsFor, traceScore } from './scoring'
+import { evaluateHandwritingStrokes, percent, starsFor, traceScore } from './scoring'
 
 describe('composeSyllable', () => {
   it.each([
@@ -67,7 +67,22 @@ describe('scoring', () => {
     expect(traceScore(target, () => true, 0)).toBe(100)
     expect(traceScore(target, (x) => x < 5, 0.1)).toBe(50)
     expect(traceScore(target, () => true, 0.85)).toBe(50)
+    expect(traceScore(target, () => true, 0, 2.6)).toBe(0)
     expect(traceScore([], () => true, 0)).toBe(0)
+  })
+  it('evaluateHandwritingStrokes chống tô bôi đen (cheat) và chấm đúng nét vẽ', () => {
+    const paths = ['M 0,0 L 100,0']
+    // Vẽ đúng theo đường nét mẫu -> 100 điểm
+    const goodStroke = [[{ x: 0, y: 0 }, { x: 50, y: 2 }, { x: 100, y: 0 }]]
+    expect(evaluateHandwritingStrokes(paths, goodStroke, 12)).toBeGreaterThanOrEqual(90)
+
+    // Cheat: tô quẹt đi quẹt lại phủ kín cả vùng -> 0 điểm
+    const scribbleCheat = [[
+      { x: 0, y: -30 }, { x: 100, y: -30 }, { x: 0, y: -15 }, { x: 100, y: -15 },
+      { x: 0, y: 0 }, { x: 100, y: 0 }, { x: 0, y: 15 }, { x: 100, y: 15 },
+      { x: 0, y: 30 }, { x: 100, y: 30 },
+    ]]
+    expect(evaluateHandwritingStrokes(paths, scribbleCheat, 12)).toBeLessThan(30)
   })
 })
 

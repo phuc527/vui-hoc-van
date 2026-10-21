@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { speak } from '../lib/speech'
-import { traceScore } from '../lib/scoring'
+import { evaluateHandwritingStrokes, traceScore, type Point } from '../lib/scoring'
 import { layoutHandwriting, mapPoints, strokeStart } from '../lib/handwriting'
 import type { TraceConfig } from '../lib/types'
 import { Button } from '../components/ui'
@@ -45,6 +45,7 @@ export function TraceCanvas({ config, onFinish }: ExerciseProps<TraceConfig>) {
   const ref = useRef<HTMLCanvasElement>(null)
   const drawing = useRef(false)
   const last = useRef<{ x: number; y: number } | null>(null)
+  const userStrokes = useRef<Point[][]>([])
   const [color, setColor] = useState(COLORS[0])
   const [hasInk, setHasInk] = useState(false)
   const [result, setResult] = useState<number | null>(null)
@@ -65,18 +66,25 @@ export function TraceCanvas({ config, onFinish }: ExerciseProps<TraceConfig>) {
     if (result !== null) return
     ref.current!.setPointerCapture(e.pointerId)
     drawing.current = true
-    last.current = pos(e)
-    stroke(last.current, last.current)
+    const p = pos(e)
+    last.current = p
+    userStrokes.current.push([p])
+    stroke(p, p)
     setHasInk(true)
   }
   const move = (e: React.PointerEvent) => {
     if (!drawing.current || !last.current) return
-    const p = pos(e); stroke(last.current, p); last.current = p
+    const p = pos(e)
+    stroke(last.current, p)
+    last.current = p
+    const cur = userStrokes.current[userStrokes.current.length - 1]
+    if (cur) cur.push(p)
   }
   const up = () => { drawing.current = false; last.current = null }
 
   const clear = () => {
     ref.current!.getContext('2d')!.clearRect(0, 0, W, H)
+    userStrokes.current = []
     setHasInk(false); setResult(null)
   }
 
@@ -95,18 +103,30 @@ export function TraceCanvas({ config, onFinish }: ExerciseProps<TraceConfig>) {
       }
       return ctx.getImageData(0, 0, W, H).data
     }
-    const lineMask = mk(6)            // đường nét mẫu
-    const wideMask = mk(brush * 2.4)  // vùng cho phép (lem nhẹ)
+    const lineMask = mk(6)                        // đường tâm nét mẫu
+    const expectedMask = mk(Math.max(10, pen))    // diện tích mực chuẩn nếu viết đúng 1 lần
+    const wideMask = mk(Math.max(brush * 0.9, pen * 1.15)) // vùng cho phép quanh nét mẫu
     const ink = ref.current!.getContext('2d')!.getImageData(0, 0, W, H).data
     const alpha = (d: Uint8ClampedArray, x: number, y: number) => d[(Math.round(y) * W + Math.round(x)) * 4 + 3]
 
     const target: { x: number; y: number }[] = []
     for (let y = 0; y < H; y += 3) for (let x = 0; x < W; x += 3) if (alpha(lineMask, x, y) > 128) target.push({ x, y })
-    let inkTotal = 0, inkOut = 0
+    let inkTotal = 0, inkOut = 0, expectedTotal = 0
     for (let y = 0; y < H; y += 4) for (let x = 0; x < W; x += 4) {
+      if (alpha(expectedMask, x, y) > 128) expectedTotal++
       if (alpha(ink, x, y) > 0) { inkTotal++; if (alpha(wideMask, x, y) === 0) inkOut++ }
     }
-    const score = traceScore(target, (x, y) => alpha(ink, x, y) > 0, inkTotal ? inkOut / inkTotal : 0)
+    const overInkRatio = expectedTotal > 0 ? inkTotal / expectedTotal : 1
+    // Đổi ngưỡng lem ra ngoài chặt hơn (nhân hệ số 2 để tô ra ngoài > 18% là bắt đầu bị trừ nặng)
+    const pixelScore = traceScore(target, (x, y) => alpha(ink, x, y) > 0, inkTotal ? (inkOut / inkTotal) * 2 : 0, overInkRatio)
+
+    let score = pixelScore
+    if (geo) {
+      const tolerance = Math.max(12, brush * 0.65, pen * 0.65)
+      const strokeScore = evaluateHandwritingStrokes(geo.paths, userStrokes.current, tolerance)
+      // Kết hợp cả điểm đường nét vector (chống tô bôi đen, kiểm tra hướng & độ bám nét) và điểm pixel
+      score = Math.min(pixelScore, strokeScore)
+    }
     setResult(score)
     speak(score >= 70 ? 'Giỏi quá' : 'Cố lên nhé')
   }
