@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
   bestStars, fetchExercises, fetchLessonByNumber, fetchLessons, fetchMyAttempts, fetchUnit,
-  fetchUnitWords, fetchWords, unitLabel, useAsync,
+  fetchUnitWords, fetchWords, unitFullLabel, useAsync,
 } from '../lib/api'
 import { EXERCISE_LABELS, UNIT_KIND_LABELS, type Exercise, type Unit, type Word } from '../lib/types'
 import { Card, Loading, StarRating } from '../components/ui'
@@ -59,8 +59,8 @@ export function UnitPage() {
           <button onClick={() => setCards(true)} className="rounded-xl bg-white/85 px-4 py-2 font-bold text-ocean-deep shadow hover:bg-white">📽️ Trình chiếu thẻ từ</button>
         )}
       </div>
-      <Player title={`${UNIT_KIND_LABELS[unit.kind]} ${unitLabel(unit)}`} {...data} onSaved={reload} />
-      {cards && <Flashcards title={`${UNIT_KIND_LABELS[unit.kind]} ${unitLabel(unit)}`} words={data.unitWords} onClose={() => setCards(false)} />}
+      <Player title={unitFullLabel(unit)} {...data} onSaved={reload} />
+      {cards && <Flashcards title={unitFullLabel(unit)} words={data.unitWords} onClose={() => setCards(false)} />}
     </>
   )
 }

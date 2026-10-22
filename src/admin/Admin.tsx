@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { NavLink, Route, Routes } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { fetchExercises, fetchLessons, fetchUnits, fetchWords, unitLabel, useAsync } from '../lib/api'
+import { fetchExercises, fetchLessons, fetchUnits, fetchWords, unitFullLabel, unitLabel, useAsync } from '../lib/api'
 import {
   AM_SUBTYPE_LABELS, EXERCISE_LABELS, EXERCISE_TEMPLATES, UNIT_KIND_LABELS,
   type Attempt, type Exercise, type ExerciseType, type Profile, type UnitKind, type Word,
@@ -188,7 +188,7 @@ function WordsAdmin() {
                 <label key={u.id} className={`cursor-pointer rounded-lg px-2 py-1 text-sm ${unitIds.includes(u.id) ? 'bg-ocean text-white' : 'bg-foam'}`}>
                   <input type="checkbox" className="hidden" checked={unitIds.includes(u.id)}
                     onChange={(e) => setUnitIds(e.target.checked ? [...unitIds, u.id] : unitIds.filter((x) => x !== u.id))} />
-                  {UNIT_KIND_LABELS[u.kind]} {unitLabel(u)}
+                  {unitFullLabel(u)}
                 </label>
               ))}
             </div>
@@ -264,7 +264,7 @@ function ExercisesAdmin() {
   const owner = (e: Exercise) => {
     if (e.lesson_id) { const l = data.lessons.find((x) => x.id === e.lesson_id); return l ? `Bài ${l.number}` : '' }
     const u = data.units.find((x) => x.id === e.unit_id)
-    return u ? `${UNIT_KIND_LABELS[u.kind]} ${unitLabel(u)}` : ''
+    return u ? unitFullLabel(u) : ''
   }
   const list = data.exercises.filter((e) => !filter || owner(e).toLowerCase().includes(filter.toLowerCase()) || e.title.toLowerCase().includes(filter.toLowerCase()))
 
@@ -306,7 +306,7 @@ function ExercisesAdmin() {
               setEditing({ ...editing, unit_id: v[0] === 'u' ? Number(v.slice(1)) : null, lesson_id: v[0] === 'l' ? Number(v.slice(1)) : null })
             }}>
               <optgroup label="Bài ôn tập">{data.lessons.map((l) => <option key={l.id} value={`l${l.id}`}>Bài {l.number}: {l.title}</option>)}</optgroup>
-              <optgroup label="Âm / Vần / Thanh">{data.units.map((u) => <option key={u.id} value={`u${u.id}`}>{UNIT_KIND_LABELS[u.kind]} {unitLabel(u)}</option>)}</optgroup>
+              <optgroup label="Âm / Vần / Thanh">{data.units.map((u) => <option key={u.id} value={`u${u.id}`}>{unitFullLabel(u)}</option>)}</optgroup>
             </select>
             <input className={`${input} w-24`} type="number" title="Thứ tự" value={editing.order_index ?? 0} onChange={(e) => setEditing({ ...editing, order_index: Number(e.target.value) })} />
           </div>

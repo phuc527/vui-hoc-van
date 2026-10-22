@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase'
-import type { Attempt, Exercise, Lesson, Unit, UnitKind, Word } from './types'
+import { UNIT_KIND_LABELS, type Attempt, type Exercise, type Lesson, type Unit, type UnitKind, type Word } from './types'
 
 /** Hook nhỏ thay cho react-query: chạy fn, trả về data/error/reload */
 export function useAsync<T>(fn: () => Promise<T>, deps: unknown[]) {
@@ -71,6 +71,11 @@ export function bestStars(attempts: Attempt[]): Map<number, number> {
 }
 
 export const unitLabel = (u: Unit) => u.title ?? u.value
+/** "Vần ao", "Thanh hỏi ( ˀ )" – không lặp "Thanh Thanh" khi tiêu đề đã có tên loại */
+export const unitFullLabel = (u: Unit) => {
+  const label = unitLabel(u), kind = UNIT_KIND_LABELS[u.kind]
+  return label.startsWith(kind) ? label : `${kind} ${label}`
+}
 
 export interface RankRow { user_id: string; display_name: string; username: string; stars: number; exercises: number }
 

@@ -182,7 +182,7 @@ on conflict do nothing;
 -- Thanh
 insert into public.units (kind, value, title, order_index) values
  ('thanh','ngang','Thanh ngang',1),('thanh','sắc','Thanh sắc ( ´ )',2),('thanh','huyền','Thanh huyền ( ` )',3),
- ('thanh','hỏi','Thanh hỏi ( ̉ )',4),('thanh','ngã','Thanh ngã ( ˜ )',5),('thanh','nặng','Thanh nặng ( . )',6)
+ ('thanh','hỏi','Thanh hỏi ( ˀ )',4),('thanh','ngã','Thanh ngã ( ˜ )',5),('thanh','nặng','Thanh nặng ( . )',6)
 on conflict do nothing;
 
 -- Từ minh hoạ (emoji làm hình tạm, giáo viên có thể upload ảnh thật)
@@ -551,3 +551,7 @@ update public.exercises e set config = jsonb_build_object('items', case u.value
 from public.units u
 where e.unit_id = u.id and e.type = 'true_false' and u.kind = 'van' and u.value in ('ăt','ât')
   and e.config::text like '%bật lửa%';
+
+-- Dấu hỏi kết hợp (U+0309) đứng một mình bị vẽ lệch → dùng ký tự đứng riêng ˀ
+update public.units set title = 'Thanh hỏi ( ˀ )' where kind = 'thanh' and value = 'hỏi';
+update public.exercises set title = 'Đọc Thanh hỏi ( ˀ )' where title like 'Đọc Thanh hỏi%';
